@@ -4,17 +4,12 @@
 
 ## How to Use
 
-    **git clone https://www.github.com/Gustavo6046/Lonedude**
-    **cd Lonedude**
-    **cp config.example.json config.json**
-    **nano config.json** # edit to your likings
-    **pypy3 main.py**
+    git clone https://www.github.com/Gustavo6046/Lonedude
+    cd Lonedude
+    cp config.example.json config.json
+    nano config.json** # edit to your likings
+    pypy3 main.py
 
-If you want to parse text files inside the `parsedata` directory, such that:
+If you want to parse text files inside the `parsedata` directory (for example `parsedata/stuff.txt`), then do:
 
-    **ls parsedata** 
-    stuff.txt
-
-Then do:
-
-    **pypy3 main.py stuff.txt**
+    pypy3 main.py stuff
