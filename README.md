@@ -7,7 +7,7 @@
     git clone https://www.github.com/Gustavo6046/Lonedude
     cd Lonedude
     cp config.example.json config.json
-    nano config.json** # edit to your likings
+    nano config.json **# edit to your likings**
     pypy3 main.py
 
 If you want to parse text files inside the `parsedata` directory (for example `parsedata/stuff.txt`), then do:

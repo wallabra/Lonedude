@@ -26,7 +26,7 @@ allChain = chat.MarkovChain(order=9, filename='markov.msgpack')
 # allChain.save(open("markov.msgpack", "wb"))
 
 console = logging.StreamHandler()
-console.setLevel(logging.DEBUG)
+console.setLevel(logging.INFO)
 console.terminator = ""
 
 formatter = logging.Formatter('\r%(name)-12s: %(levelname)-8s %(message)s\n$')
@@ -42,6 +42,8 @@ class LonedudeBot(SingleServerIRCBot):
         self.joinchans = channels
         
     def on_pubmsg(self, connection, event):
+        global allChain
+        
         mcommand = event.arguments[0].startswith("()markov") and ( len(event.arguments[0]) == 8 or event.arguments[0].startswith("()markov ") )
         
         if mcommand or re.search(re.escape(connection.nickname) + '([,.:;]* |$)', event.arguments[0]) != None:
@@ -116,6 +118,18 @@ class LonedudeBot(SingleServerIRCBot):
             self.chain.add_score(-1, last)
             self.connection.privmsg(event.target, "{}: Sentence weight decreased.".format(event.source.nick))
         
+        elif event.arguments[0] == "()random":
+            res = self.chain.random(250)
+            
+            for u in self.channels[event.target].users():
+                if res.lower().find(str(u.lower())) > -1:
+                    print("Stripping nickname: {}".format(repr(u.lower())))
+                    
+                    res = res[:res.lower().find(str(u.lower()))] + res[res.lower().find(str(u.lower())) + len(u.lower()):]
+            
+            res = res.strip(" ")
+            self.connection.privmsg(event.target, "{}: {}".format(event.source.nick, res))
+        
         elif event.arguments[0] == "()reload":
             try:
                 global chat
@@ -132,6 +146,9 @@ class LonedudeBot(SingleServerIRCBot):
                 
             else:
                 self.connection.privmsg(event.target, "[{}: Reloaded succesfully.]".format(event.source.nick))
+            
+        elif event.arguments[0] == "()size":
+            self.connection.privmsg(event.target, "[{}: {} forward and {} backward nodes.]".format(event.source.nick, len(self.chain.data), len(self.chain.back)))
             
         else:
             try:

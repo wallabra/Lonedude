@@ -61,11 +61,14 @@ class MarkovChain(object):
                         d.seek(0)
                         d = filename.read()
                         
-                    stuff = msgpack.unpackb(d)
-                    self.data = stuff[b"forward"]
-                    self.back = stuff[b"backward"]
+                    stuff = msgpack.unpackb(d, raw=False)
                     
-                    [self.fw_weights, self.bw_weights] = stuff[b"weights"]
+                    # print(tuple(stuff.keys()), tuple(map(len, stuff.values())))
+                    
+                    self.data = stuff["forward"]
+                    self.back = stuff["backward"]
+                    
+                    [self.fw_weights, self.bw_weights] = stuff["weights"]
                     
                     # print(len(self.data), len(self.back))
                 
@@ -74,15 +77,10 @@ class MarkovChain(object):
                 self.fw_weights = {}
                 self.bw_weights = {}
                 self.back = {}
-            
-            logging.info(" ")
-            logging.info("******")
-            logging.info("Loaded {} forward and {} backward Markov nodes.".format(len(self.data), len(self.back)))
-            logging.info("******")
-            logging.info(" ")
                 
         except BaseException as e:
             traceback.print_exc()
+            # print(type(e), e)
             
             for l in traceback.format_exc().split("\n"):
                 logging.warning(l)
@@ -95,9 +93,15 @@ class MarkovChain(object):
             self.bw_weights = {}
             
             logging.warning("A problem occurred trying to load Markov nodes. Emptying Markov chain.")
+            
+        logging.debug(" ")
+        logging.debug("******")
+        logging.info("Loaded {} forward and {} backward Markov nodes.".format(len(self.data), len(self.back)))
+        logging.debug("******")
+        logging.debug(" ")
         
     def save(self, io):
-        msgpack.pack({"forward": self.data, "backward": self.back, "weights": [self.fw_weights, self.bw_weights]}, io)
+        msgpack.pack({"forward": self.data, "backward": self.back, "weights": [self.fw_weights, self.bw_weights]}, io, use_bin_type=True)
         
         logging.info("Saved {} forward and {} backward Markov nodes into the Markov database.".format(len(self.data), len(self.back)))
         
@@ -216,7 +220,7 @@ class MarkovChain(object):
         if len(self.data.keys()) < 1:
             return None
         
-        return self.get(random.choice(list(self.data.keys())), maxLen)
+        return self.get(data=random.choice(list(self.data.keys())), maxLen=maxLen)
 
     def get(self, data, maxLen=80):
         global log
@@ -227,7 +231,7 @@ class MarkovChain(object):
         bkey = data.lower()[:self.order][::-1]
         
         if len(key) > maxLen - 1:
-            return None
+            return key[:maxLen]
         
         res = ""
         cres = ""
