@@ -19,11 +19,11 @@ idata = ""
 markovIn = None
 retrieve = 1
 
-if isfile("markov.bson.xz"):
-    markovIn = open("markov.bson.xz", "rb")
+if isfile("markov.msgpack"):
+    markovIn = open("markov.msgpack", "rb")
 
-allChain = chat.MarkovChain(order=9, filename=markovIn)
-# allChain.save(open("markov.bson.xz", "wb"))
+allChain = chat.MarkovChain(order=9, filename='markov.msgpack')
+# allChain.save(open("markov.msgpack", "wb"))
 
 console = logging.StreamHandler()
 console.setLevel(logging.DEBUG)
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     def _on_exit():
         _exit_bots()
             
-        allChain.save(open("markov.bson.xz", "wb"))
+        allChain.save(open("markov.msgpack", "wb"))
         
     atexit.register(_on_exit)
     
@@ -172,14 +172,15 @@ if __name__ == "__main__":
             for i, l in enumerate(lines):
                 charInd += len(l)
                 perc = str(math.floor(100 * charInd / allChar))
-                rl = "\rFile {} out of {}: {}/{} ({}{}%)".format(fi + 1, len(sys.argv) - 1, i, len(lines), " " * (3 - len(perc)), perc)
-                rl += " " * max(50 - len(rl), 0)
+                prog = int(50 * charInd / allChar)
+                rl = "\rFile {} out of {}: {}/{} ({}{}%) [{}{}]".format(fi + 1, len(sys.argv) - 1, i + 1, len(lines), " " * (3 - len(perc)), perc, '#' * prog, ' ' * (50 - prog))
+                rl += " " * max(90 - len(rl), 0)
                 sys.stdout.write(rl)
                 allChain.parse(l)
                 
         print("Parsed {} characters and {} lines.".format(omniChar, omniLines))
             
-        ofp = open("markov.bson.xz", "wb")
+        ofp = open("markov.msgpack", "wb")
 
     else:        
         conns = {}
@@ -237,7 +238,7 @@ if __name__ == "__main__":
                         allChain.back = {}
                         allChain.fw_weights = {}
                         allChain.bw_weights = {}
-                        allChain.save(open("markov.bson.xz", "wb"))
+                        allChain.save(open("markov.msgpack", "wb"))
 
                     time.sleep(0.2)
                     continue

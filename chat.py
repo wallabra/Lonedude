@@ -1,11 +1,11 @@
 import random
-import bson
-import lzma
+import msgpack
 import logging
 import traceback
 import time
 import math
 
+from os.path import isfile
 
 
 CHAT_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789-_.,?!@:;=+-'\"()[]{}#/\\ "
@@ -43,27 +43,31 @@ class MarkovChain(object):
         
         try:
             if filename is not None:
-                if isinstance(filename, str):
-                    f = open(filename, 'r')
+                if isinstance(filename, MarkovChain):
+                    self.data = filename.data
+                    self.back = filename.back
+                    
+                    self.fw_weights = filename.fw_weights
+                    self.bw_weights = filename.bw_weights
                     
                 else:
-                    f = filename
+                    if isinstance(filename, str):
+                        if not isfile(filename):
+                            raise RuntimeError('Markov file {} does not exist!'.format(filename))
+                            
+                        d = open(filename, 'rb').read()
+                        
+                    else:
+                        d.seek(0)
+                        d = filename.read()
+                        
+                    stuff = msgpack.unpackb(d)
+                    self.data = stuff[b"forward"]
+                    self.back = stuff[b"backward"]
                     
-                f.seek(0)
-                stuff = bson.loads(lzma.decompress(f.read()))
-                self.data = stuff["forward"]
-                self.back = stuff["backward"]
-                
-                [self.fw_weights, self.bw_weights] = stuff["weights"]
-                
-                # print(len(self.data), len(self.back))
-                
-            elif isinstance(filename, MarkovChain):
-                self.data = filename.data
-                self.back = filename.back
-                
-                self.fw_weights = filename.fw_weights
-                self.bw_weights = filename.bw_weights
+                    [self.fw_weights, self.bw_weights] = stuff[b"weights"]
+                    
+                    # print(len(self.data), len(self.back))
                 
             else:
                 self.data = {}
@@ -78,6 +82,8 @@ class MarkovChain(object):
             logging.info(" ")
                 
         except BaseException as e:
+            traceback.print_exc()
+            
             for l in traceback.format_exc().split("\n"):
                 logging.warning(l)
                 
@@ -87,9 +93,11 @@ class MarkovChain(object):
             
             self.fw_weights = {}
             self.bw_weights = {}
+            
+            logging.warning("A problem occurred trying to load Markov nodes. Emptying Markov chain.")
         
     def save(self, io):
-        io.write(lzma.compress(bson.dumps({"forward": self.data, "backward": self.back, "weights": [self.fw_weights, self.bw_weights]})))
+        msgpack.pack({"forward": self.data, "backward": self.back, "weights": [self.fw_weights, self.bw_weights]}, io)
         
         logging.info("Saved {} forward and {} backward Markov nodes into the Markov database.".format(len(self.data), len(self.back)))
         
